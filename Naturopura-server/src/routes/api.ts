@@ -4,6 +4,7 @@ import env from '../environment/environment';
 import { adminLogin, adminSignup, userLogin, userSignup } from "../controller/auth";
 import Joi from 'joi';
 import ApiResponse from '../../helper/ApiResponse';
+import { ResponseDefinitions } from '../responses';
 
 const router: Router = Router();
 
@@ -20,7 +21,7 @@ router.post('/admin/login', (req: Request, res: Response) => {
     const { error } = schema.validate(req.body);
 
     if (error) {
-        return res.status(400).json(ApiResponse.error('Invalid input provided.', 'INVALID_INPUT', error.details));
+        return res.status(400).json(ApiResponse.error(ResponseDefinitions.InvalidInput.message, ResponseDefinitions.InvalidInput.code, error.details));
     }
     try {
         const response = adminLogin(signature, key);
@@ -30,3 +31,8 @@ router.post('/admin/login', (req: Request, res: Response) => {
     }
 });
 export default router;
+
+
+{
+
+}
