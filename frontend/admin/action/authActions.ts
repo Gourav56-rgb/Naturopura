@@ -19,7 +19,7 @@ type User = {
 };
 
 // Action Creators
-export const setLoading = (isLoad:boolean) => ({
+export const setLoading = (isLoad: boolean) => ({
   type: LOGIN_REQUEST,
   payload: isLoad,
 });
@@ -29,7 +29,7 @@ export const loginSuccess = (user: User) => ({
   payload: user,
 });
 
-export const loginFailure = (error: string) => ({
+export const loginFailure = (error: object) => ({
   type: LOGIN_FAILURE,
   payload: error,
 });
@@ -42,17 +42,24 @@ export const logout = () => ({
 export const login = (credentials: { signature: string; key: string }) => {
   return async (dispatch: Dispatch) => {
     dispatch(setLoading(true));
+    console.log(`>>>>>>>>>>.3`);
 
     try {
       const response = await loginUser(credentials);
+      console.log(`response>>>>>>>>>`, response);
 
       if (typeof window !== "undefined") {
         localStorage.setItem("accessToken", response?.token);
       }
-      const user = response.data;
-      user.token = response?.token;
-       // Assuming the server returns the user object
-      dispatch(loginSuccess(user));
+      if (!response.success) {
+        dispatch(loginFailure(response));
+      } else {
+        const user = response.data;
+        user.token = response?.token;
+        // Assuming the server returns the user object
+        dispatch(loginSuccess(user));
+      }
+
       dispatch(setLoading(false));
     } catch (error: any) {
       dispatch(loginFailure(error.response?.data?.error));

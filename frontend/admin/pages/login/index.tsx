@@ -11,19 +11,19 @@ const index = () => {
   const [wallets, setWallets] = useState<Array<any>>([]);
   const [openWallet, setOpenWallet] = useState(false);
 
-  async function connectToWallet(walletName:string) {
+  async function connectToWallet(walletName: string) {
     const wallet = await BrowserWallet.enable(walletName);
     const addresses = await wallet.getUsedAddresses();
     const signature = await wallet.signData(addresses[0], 'mesh');
 
-    console.log(signature,'>>>>>>>>>>>>>>>>>>>>>>>');
-    
     dispatch(login({ key: signature.key, signature: signature.signature }));
   }
 
   const router = useRouter();
   const user = useSelector((state: any) => state.auth.user);
   const error = useSelector((state: any) => state.auth.error);
+
+  console.log(`error>>>>>>>>>>>>>>opc`, error?.responseType);
 
 
   if (typeof window !== "undefined") {
@@ -36,7 +36,7 @@ const index = () => {
   }, []);
 
   useEffect(() => {
-   
+
   }, []);
 
   useEffect(() => {
@@ -47,11 +47,11 @@ const index = () => {
 
 
   useEffect(() => {
-    if(error !== null && error?.code == 'USER_NOT_EXIT'){
+    if (error !== null && error?.responseType == 'USER_NOT_EXIST') {
       router.push("/signup");
     }
     console.log(`user`, user);
-   }, [error]);
+  }, [error]);
 
   return (
     <div className="">
@@ -62,7 +62,7 @@ const index = () => {
           Sign-up with wallet
         </label>
         <button
-          onClick={()=>setOpenWallet(!openWallet)}
+          onClick={() => setOpenWallet(!openWallet)}
           type="button"
           className="text-white bg-[#ACB631] hover:bg-[#ACB631]/90 focus:ring-4 focus:outline-none focus:ring-[#f3ff63]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-[#3b5998]/55 mt-4"
         >
@@ -98,7 +98,7 @@ const index = () => {
             return (
               <div
                 key={index}
-                onClick={()=>connectToWallet(item.name)}
+                onClick={() => connectToWallet(item.name)}
                 className="text-white bg-[#ACB631] hover:bg-[#ACB631]/90 focus:ring-4 focus:outline-none focus:ring-[#f3ff63]/50 font-medium rounded-sm text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-[#3b5998]/55 mt-1 w-[10rem] cursor-pointer"
               >
                 {item.name}

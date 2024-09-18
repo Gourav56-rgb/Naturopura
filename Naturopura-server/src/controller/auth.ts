@@ -8,6 +8,7 @@ import env from "../environment/environment";
 // import { createErrorResponse,createSuccessResponse } from "../utility/helper/helper";
 import { publishUserRegisteredEvent } from "../event/event";
 import jwt from "jsonwebtoken";
+import ApiResponse from "../../helper/ApiResponse";
 
 export const userSignup = async (req: Request, res: Response) => {
   try {
@@ -37,7 +38,6 @@ export const userSignup = async (req: Request, res: Response) => {
 
     const { error, value } = schema.validate(req.body);
 
-    console.log(error, ">>>>>>>>>>>>>>>>>>>");
 
     if (error) {
       return res.status(400).json({
@@ -128,10 +128,8 @@ export const userLogin = async (req: Request, res: Response) => {
     const { error } = schema.validate(req.body);
 
     if (error) {
-      return res.status(400).json({
-        createErrorResponse: "INVALID_INPUT",
-        message: "Invalid input provided.",
-      });
+      return res.status(200).json(ApiResponse.error('Invalid input provided.', 'INVALID_INPUT'));
+
     } else {
       const user = await User.findOne({
         key: key,
@@ -140,10 +138,8 @@ export const userLogin = async (req: Request, res: Response) => {
       });
 
       if (!user) {
-        return res.status(400).json({
-          createErrorResponse: "USER_NOT_EXIST",
-          message: "Please signup first.",
-        });
+        return res.status(200).json(ApiResponse.error('Please signup first.', 'USER_NOT_EXIST'));
+
       }
 
       bcryptjs.compare(signature, user.signature).then((resData: boolean) => {
@@ -157,49 +153,29 @@ export const userLogin = async (req: Request, res: Response) => {
             email: user.email,
           };
 
-          return res.status(201).json({
-            createSuccessResponse: "Successfully logged in.",
+
+
+          return res.status(201).json(ApiResponse.success('Successfully logged in.', {
             token: jwt.sign(newCustomer, env.TOKEN_SECRET, {
               expiresIn: "48h",
             }),
             ...newCustomer,
             expiresIn: "48h",
-          });
+          }, 'USER_LOGIN_SUCCESS'));
         } else {
-          return res.status(400).json({
-            createErrorResponse: "SIGNATURE_NOT_MATCH",
-            message: "Signature does not match.",
-          });
+          throw error;
         }
       });
     }
   } catch (error) {
-    return res.status(500).json({
-      createErrorResponse: "INTERNAL_SERVER_ERROR",
-      message: "An internal server error occurred.",
-    });
+    throw error;
   }
 };
 
-export const adminLogin = async (req: Request, res: Response) => {
-  const { signature, key } = req.body;
+export const adminLogin = async (signature: any, key: any) => {
+  // const { signature, key } = req.body;
 
   try {
-    const schema = Joi.object({
-      signature: Joi.string().required(),
-      key: Joi.string().required(),
-    });
-
-    const { error } = schema.validate(req.body);
-
-    if (error) {
-      return res.status(400).json({
-        createErrorResponse: "INVALID_INPUT",
-        message: "Invalid input provided.",
-        details: error.details,
-      });
-    }
-
     const user = await User.findOne({
       key: key,
       deletedAt: { $eq: null },
@@ -207,17 +183,12 @@ export const adminLogin = async (req: Request, res: Response) => {
     });
 
     if (!user) {
-      return res.status(400).json({
-        createErrorResponse: "USER_NOT_EXIST",
-        message: "Please signup first.",
-      });
+      return ApiResponse.error('Please signup first.', 'USER_NOT_EXIST');
+
     }
 
     if (user.role === "consumer") {
-      return res.status(401).json({
-        createErrorResponse: "USER_NOT_AUTHORIZED",
-        message: "You are not authorized for this endpoint.",
-      });
+      return ApiResponse.error('You are not authorized for this endpoint.', 'USER_NOT_AUTHORIZED');
     }
 
     bcryptjs.compare(signature, user.signature).then((resData: boolean) => {
@@ -231,26 +202,22 @@ export const adminLogin = async (req: Request, res: Response) => {
           email: user.email,
         };
 
-        return res.status(201).json({
+        return ApiResponse.success('Successfully logged in.', {
           createSuccessResponse: "Successfully logged in.",
           token: jwt.sign(newCustomer, env.TOKEN_SECRET, {
             expiresIn: "48h",
           }),
           ...newCustomer,
           expiresIn: "48h",
-        });
+        }, 'USER_SUCCESSFULLY_LOGIN');
+
       } else {
-        return res.status(400).json({
-          createErrorResponse: "SIGNATURE_NOT_MATCH",
-          message: "Signature does not match.",
-        });
+        return ApiResponse.error('Signature does not match.', 'SIGNATURE_NOT_MATCH');
+
       }
     });
   } catch (error) {
-    return res.status(500).json({
-      createErrorResponse: "INTERNAL_SERVER_ERROR",
-      message: "An internal server error occurred.",
-    });
+    return ApiResponse.error('An internal server error occurred.', 'INTERNAL_SERVER_ERROR');
   }
 };
 
