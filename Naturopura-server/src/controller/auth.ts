@@ -1,6 +1,6 @@
-import { Request, Response } from "express";
-import validator from "validatorjs";
-import Joi from "joi";
+// import { Request, Response } from "express";
+// import validator from "validatorjs";
+// import Joi from "joi";
 import bcryptjs from "bcryptjs";
 const saltRounds = 10;
 import User from "../model/user.model";
@@ -9,170 +9,99 @@ import env from "../environment/environment";
 import { publishUserRegisteredEvent } from "../event/event";
 import jwt from "jsonwebtoken";
 import ApiResponse from "../../helper/ApiResponse";
+import { ResponseDefinitions } from "../responses";
 
-export const userSignup = async (req: Request, res: Response) => {
+// const salt = bcryptjs.genSaltSync(10)
+
+export const userSignup = async (
+  firstName: any,
+  lastName: any,
+  email: any,
+  signature: any,
+  key: any,
+  address: any,
+  isRemember: any,
+  id: any
+) => {
   try {
-    const {
-      firstName,
-      lastName,
-      email,
-      signature,
-      key,
-      address,
-      isRemember,
-      id,
-    } = req.body;
-
-    const schema = Joi.object({
-      firstName: Joi.string().min(3).max(30).required(),
-      lastName: Joi.string().min(3).max(30).required(),
-      signature: Joi.string().required(),
-      key: Joi.string().required(),
-      address: Joi.string().required(),
-      isRemember: Joi.boolean().required(),
-      id: Joi.number().required(),
-      email: Joi.string()
-        .email({ minDomainSegments: 2, tlds: { allow: ["com", "net"] } })
-        .required(),
+    // Check if user already exists with the given key
+    const user = await User.findOne({
+      key: key,
+      deletedAt: { $eq: null },
     });
 
-    const { error, value } = schema.validate(req.body);
-
-
-    if (error) {
-      return res.status(400).json({
-        createErrorResponse: "INVALID_INPUT",
-        message: "Invalid input provided.",
-      });
+    if (user) {
+      return ApiResponse.error(
+        "You have already signed up, please try logging in.",
+        "USER_ALREADY_EXISTS"
+      );
     } else {
-      const user = await User.findOne({
-        key: key,
-        deletedAt: { $eq: null },
-      });
+      let hashPass: string = "";
 
-      if (user) {
-        return res.status(400).json({
-          createErrorResponse: "USER_ALREADY_EXISTS",
-          message: "You have already signed up, please try logging in.",
-        });
-      } else {
-        let hashPass: string = "";
-        bcryptjs
-          .genSalt(saltRounds)
-          .then((salt: string) => {
-            return bcryptjs.hash(signature, salt);
-          })
-          .then(async (hash: string) => {
-            const customer = new User({
-              firstName: firstName.toLowerCase(),
-              lastName: lastName.toLowerCase(),
-              role: "consumer",
-              email: email.toLowerCase(),
-              signature: hash,
-              key: key,
-              walletAddress: address,
-              id: id,
-            });
-
-            console.log(">>>>>>>>>>>createErrorResponse");
-
-            await customer.save();
-            // console.log(customer);
-
-            const newCustomer = {
-              isActive: customer.isActive,
-              id: customer.id,
-              firstName: customer.firstName,
-              lastName: customer.lastName,
-              role: customer.role,
-              email: customer.email,
-            };
-
-            console.log(newCustomer);
-
-            return res.status(201).json({
-              createSuccessResponse: "Successfully registered.",
-              token: isRemember
-                ? jwt.sign(newCustomer, env.TOKEN_SECRET, { expiresIn: "48h" })
-                : "",
-              ...newCustomer,
-              expiresIn: "48h",
-            });
-          })
-          .catch((err: any) => {
-            console.error(err.message);
-            return res.status(500).json({
-              createErrorResponse: "HASH_ERROR",
-              message: "Error while hashing password.",
-            });
+      // Generate salt and hash password
+      bcryptjs
+        .genSalt(saltRounds)
+        .then((salt: string) => {
+          return bcryptjs.hash(signature, salt);
+        })
+        .then(async (hash: string) => {
+          // Create a new user instance
+          const customer = new User({
+            firstName: firstName.toLowerCase(),
+            lastName: lastName.toLowerCase(),
+            role: "consumer",
+            email: email.toLowerCase(),
+            signature: hash,
+            key: key,
+            walletAddress: address,
+            id: id,
           });
-      }
-    }
-  } catch (error) {
-    return res.status(500).json({
-      createErrorResponse: "INTERNAL_SERVER_ERROR",
-      message: "An internal server error occurred",
-    });
-  }
-};
 
-export const userLogin = async (req: Request, res: Response) => {
-  const { signature, key } = req.body;
+          // Save the user in the database
+          await customer.save();
 
-  try {
-    const schema = Joi.object({
-      signature: Joi.string().required(),
-      key: Joi.string().required(),
-    });
-
-    const { error } = schema.validate(req.body);
-
-    if (error) {
-      return res.status(200).json(ApiResponse.error('Invalid input provided.', 'INVALID_INPUT'));
-
-    } else {
-      const user = await User.findOne({
-        key: key,
-        deletedAt: { $eq: null },
-        isActive: 1,
-      });
-
-      if (!user) {
-        return res.status(200).json(ApiResponse.error('Please signup first.', 'USER_NOT_EXIST'));
-
-      }
-
-      bcryptjs.compare(signature, user.signature).then((resData: boolean) => {
-        if (resData) {
+          // Construct response object for the newly created user
           const newCustomer = {
-            isActive: user.isActive,
-            id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: user.role,
-            email: user.email,
+            isActive: customer.isActive,
+            id: customer.id,
+            firstName: customer.firstName,
+            lastName: customer.lastName,
+            role: customer.role,
+            email: customer.email,
           };
 
-
-
-          return res.status(201).json(ApiResponse.success('Successfully logged in.', {
-            token: jwt.sign(newCustomer, env.TOKEN_SECRET, {
-              expiresIn: "48h",
-            }),
+          // Return success response
+          return ApiResponse.success("Successfully registered.", {
+            createSuccessResponse: "Successfully registered.",
+            token: isRemember
+              ? jwt.sign(
+                  newCustomer,
+                  process.env.TOKEN_SECRET || env.TOKEN_SECRET,
+                  { expiresIn: "48h" }
+                )
+              : "",
             ...newCustomer,
             expiresIn: "48h",
-          }, 'USER_LOGIN_SUCCESS'));
-        } else {
-          throw error;
-        }
-      });
+          });
+        })
+        .catch((err: any) => {
+          console.error(err.message);
+          return ApiResponse.error(
+            "Error while hashing password.",
+            "HASH_ERROR"
+          );
+        });
     }
   } catch (error) {
-    throw error;
+    // Catch and return any unexpected errors
+    return ApiResponse.error(
+      "An internal server error occurred.",
+      "INTERNAL_SERVER_ERROR"
+    );
   }
 };
 
-export const adminLogin = async (signature: any, key: any) => {
+export const userLogin = async (signature: any, key: any) => {
   // const { signature, key } = req.body;
 
   try {
@@ -183,12 +112,7 @@ export const adminLogin = async (signature: any, key: any) => {
     });
 
     if (!user) {
-      return ApiResponse.error('Please signup first.', 'USER_NOT_EXIST');
-
-    }
-
-    if (user.role === "consumer") {
-      return ApiResponse.error('You are not authorized for this endpoint.', 'USER_NOT_AUTHORIZED');
+      return ApiResponse.error("Please signup first.", "USER_NOT_EXIST");
     }
 
     bcryptjs.compare(signature, user.signature).then((resData: boolean) => {
@@ -201,162 +125,351 @@ export const adminLogin = async (signature: any, key: any) => {
           role: user.role,
           email: user.email,
         };
-
-        return ApiResponse.success('Successfully logged in.', {
-          createSuccessResponse: "Successfully logged in.",
-          token: jwt.sign(newCustomer, env.TOKEN_SECRET, {
+        return ApiResponse.success(
+          "Successfully logged in.",
+          {
+            token: jwt.sign(newCustomer, env.TOKEN_SECRET, {
+              expiresIn: "48h",
+            }),
+            ...newCustomer,
             expiresIn: "48h",
-          }),
-          ...newCustomer,
-          expiresIn: "48h",
-        }, 'USER_SUCCESSFULLY_LOGIN');
-
+          },
+          "USER_LOGIN_SUCCESS"
+        );
       } else {
-        return ApiResponse.error('Signature does not match.', 'SIGNATURE_NOT_MATCH');
-
+        return ApiResponse.error(
+          "Signature does not match.",
+          "SIGNATURE_NOT_MATCH"
+        );
       }
     });
   } catch (error) {
-    return ApiResponse.error('An internal server error occurred.', 'INTERNAL_SERVER_ERROR');
+    return ApiResponse.error(
+      "An internal server error occurred.",
+      "INTERNAL_SERVER_ERROR"
+    );
   }
 };
 
-export const adminSignup = async (req: Request, res: Response) => {
+export const adminLogin = async (signature: any, key: any) => {
+  // const { signature, key } = req.body;
+
   try {
-    const {
-      firstName,
-      lastName,
-      email,
-      isRemember,
-      signature,
+    const user = await User.findOne({
       key,
-      address,
-      dialingCode,
-      phone,
-      addressLine1,
-      country,
-      state,
-      city,
-      zipCode,
-      type,
-      id
-    } = req.body;
-
-    const schema = Joi.object({
-      firstName: Joi.string().min(3).max(30).required(),
-      lastName: Joi.string().min(3).max(30).required(),
-      signature: Joi.string().required(),
-      key: Joi.string().required(),
-      isRemember: Joi.boolean().required(),
-      email: Joi.string()
-        .email({ minDomainSegments: 2, tlds: { allow: ["com", "net"] } })
-        .required(),
-      address: Joi.string().required(),
-      dialingCode: Joi.string().min(3).required(),
-      phone: Joi.number().required(),
-      addressLine1: Joi.string().required(),
-      country: Joi.string().required(),
-      state: Joi.string().required(),
-      city: Joi.string().required(),
-      zipCode: Joi.string().required(),
-      id: Joi.number().required(),
-      type: Joi.string()
-        .valid(
-          "admin",
-          "farmer",
-          "distributors",
-          "consultant",
-          "agricultural_chemicals",
-          "equipment_manufacturers",
-          "marketing_agencies",
-          "insurance"
-        )
-        .required(),
+      deletedAt: { $eq: null },
+      isActive: 1,
     });
+    console.log("userModel", user);
+    
 
-    const { error } = schema.validate(req.body);
-
-    if (error) {
-      return res.status(400).json({
-        createErrorResponse: "INVALID_INPUT",
-        message: "Invalid input provided.",
-        details: error.details,
-      });
+    if (!user) {
+      return ApiResponse.error("Please signup first.", "USER_NOT_EXIST");
     }
 
+    if (user.role === "consumer") {
+      return ApiResponse.error(
+        "You are not authorized for this endpoint.",
+        "USER_NOT_AUTHORIZED"
+      );
+    }
+    console.log("Original Signature:", signature);
+    console.log("Hashed Signature:", user.signature);
+     
+    return await bcryptjs
+      .compare(signature, user.signature)
+      .then((resData: boolean) => {
+        console.log("resData", resData);
+        
+        if (resData) {
+          const newCustomer = {
+            isActive: user.isActive,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+            email: user.email,
+          };
+          console.log("newCustomer", newCustomer);
+          
+
+          const successResponse =  ApiResponse.success(
+            ResponseDefinitions.OperationSuccessful.message,
+            {
+              createSuccessResponse: "Successfully logged in.",
+              token: jwt.sign(newCustomer, env.TOKEN_SECRET, {
+                expiresIn: "48h",
+              }),
+              ...newCustomer,
+              expiresIn: "48h",
+            },
+            ResponseDefinitions.OperationSuccessful.code
+          );
+          console.log("successResponse", successResponse);
+          return successResponse
+          
+        } else {
+          const errorResponse = ApiResponse.error(
+            "Signature does not match.",
+            "SIGNATURE_NOT_MATCH"
+          );
+          console.log("errorResponse", errorResponse);
+          return errorResponse
+          
+        }
+      });
+  } catch (error) {
+    return ApiResponse.error(
+      ResponseDefinitions.NotFound.message,
+      ResponseDefinitions.NotFound.code
+    );
+  }
+};
+
+export const adminSignup = async (
+  firstName: any,
+  lastName: any,
+  role: any,
+  email: any,
+  phone: any,
+  isActive: any,
+  key: any,
+  signature: any,
+  walletAddress: any,
+  isRemember: any,
+  dialingCode: any,
+  addressLine: any,
+  country: any,
+  state: any,
+  city: any,
+  zipCode: any
+) => {
+  try {
     const user = await User.findOne({
-      email: email,
+      email,
       deletedAt: { $eq: null },
     });
+    // console.log("user:", user);
 
     if (user) {
-      return res.status(400).json({
-        error: {
-          message: "You have already signed up. Try to log in.",
-          status: "error",
-        },
-      });
-    } else {
-      bcryptjs
-        .genSalt(saltRounds)
-        .then((salt: string) => {
-          return bcryptjs.hash(signature, salt);
-        })
-        .then(async (hash: string) => {
-          const customer = new User({
-            firstName: firstName,
-            lastName: lastName,
-            role: type,
-            email: email,
-            signature: hash,
-            key: key,
-            walletAddress: address,
-            id: id
-          });
+      return ApiResponse.error(
+        ResponseDefinitions.InvalidInput.message,
+        ResponseDefinitions.InvalidInput.code
+      );
+    } else if (
+      !signature ||
+      typeof signature !== "string" ||
+      signature.trim() === ""
+    ) {
+      return ApiResponse.error(
+        "Invalid signature provided.",
+        "SIGNATURE_ERROR"
+      );
+    } else 
 
-          await customer.save()
+    // console.log("Signature:", signature);
+    // console.log("Key:", key);
 
-          publishUserRegisteredEvent({
-            user_id: customer._id,
-            dialingCode,
-            phone,
-            addressLine1,
-            country,
-            state,
-            city,
-            zipCode,
-          });
+    return await bcryptjs
+      .genSalt(saltRounds)
+      .then(async (salt: string) => {
+        console.log("Generated Salt:", salt);
+        // console.log(bcryptjs.hash(signature, salt), "Hashed");
 
-          const newCustomer = {
-            isActive: customer.isActive,
-            id: customer.id,
-            firstName: customer.firstName,
-            lastName: customer.lastName,
-            role: customer.role,
-            email: customer.email,
-          };
+        const hashedToken = await bcryptjs.hash(signature, salt);
+        // console.log("hashedToken", hashedToken);
+        return hashedToken;
+      })
+      .then(async (hashedToken) => {
+        // console.log("Hashed Signature:", hashedToken);
+        const customer = new User({
+          firstName,
+          lastName,
+          role,
+          email,
+          signature: hashedToken,
+          isActive,
+          isRemember,
+          key,
+          dialingCode,
+          phone,
+          addressLine,
+          country,
+          state,
+          city,
+          zipCode,
+          walletAddress,
+        });
+        // console.log(signature, "signature");
+        // console.log(hashedToken, "hashedToken");
+        
+        
+        // console.log(customer, "customer");
 
-          return res.status(201).json({
+        await customer.save();
+
+        // publishUserRegisteredEvent({
+        //   user_id: customer._id,
+        //   dialingCode,
+        //   phone,
+        //   addressLine,
+        //   country,
+        //   state,
+        //   city,
+        //   zipCode,
+        // });
+
+        const newCustomer = {
+          firstName: customer.firstName,
+          lastName: customer.lastName,
+          role: customer.role,
+          email: customer.email,
+          signature: customer.signature,
+          isActive: customer.isActive,
+          isRemember: customer.isRemember,
+          key: customer.key,
+          dialingCode: customer.dialingCode,
+          phone: customer.phone,
+          addressLine: customer.addressLine,
+          country: customer.country,
+          state: customer.state,
+          city: customer.city,
+          zipCode: customer.zipCode,
+          walletAddress: customer.walletAddress,
+        };
+        // console.log(newCustomer, "newCustomer");
+
+        const responseSuccess = ApiResponse.success(
+          ResponseDefinitions.OperationSuccessful.message,
+          {
             createSuccessResponse: "Successfully registered.",
             token: isRemember
               ? jwt.sign(newCustomer, env.TOKEN_SECRET, { expiresIn: "48h" })
               : "",
             ...newCustomer,
             expiresIn: "48h",
-          });
-        })
-        .catch((err: any) => {
-          console.error(err.message);
-          return res.status(500).json({
-            createErrorResponse: "HASH_ERROR",
-            message: "Error while hashing password.",
-          });
-        });
-    }
+          },
+          ResponseDefinitions.OperationSuccessful.code
+        );
+
+        // console.log("responseSuccess:", responseSuccess);
+
+        return responseSuccess
+        // console.log("Response ***")
+      })
+      .catch((err: any) => {
+        console.log(err, "console");
+        return ApiResponse.error("Error while hashing password.", "HASH_ERROR");
+      });
+
   } catch (error) {
-    return res.status(500).json({
-      createErrorResponse: "INTERNAL_SERVER_ERROR",
-      message: "An internal server error occurred.",
-    });
+    const responseError = ApiResponse.error(
+      ResponseDefinitions.NotFound.message,
+      ResponseDefinitions.NotFound.code
+    );
+    // console.log("responseError", responseError);
+    
+    console.error("responseError", error);
+    
+    return responseError
   }
 };
+
+// export const adminSignup = async (req: Request, res: Response) => {
+//   try {
+//       const {firstName,
+//           lastName,
+//           role,
+//           email,
+//           signature,
+//           isActive,
+//           isRemember,
+//           key,
+//           dialingCode,
+//           phone,
+//           addressLine,
+//           country,
+//           state,
+//           city,
+//           zipCode,
+//           walletAddress} = req.body
+
+//       const user = await User.findOne({
+//           email,
+//           deletedAt: { $eq: null },
+//         }).lean();
+
+//       if (user) {
+//     return ApiResponse.error(
+//       ResponseDefinitions.InvalidInput.message,
+//       ResponseDefinitions.InvalidInput.code
+//     );
+//   }
+  
+//           const salt = await bcryptjs.genSalt(saltRounds)
+  
+//           const hashedSignature = bcryptjs.hash(signature, salt);
+
+//           const customer = new User({
+//               firstName,
+//               lastName,
+//               role,
+//               email,
+//               signature: hashedSignature,
+//               isActive,
+//               isRemember,
+//               key,
+//               dialingCode,
+//               phone,
+//               addressLine,
+//               country,
+//               state,
+//               city,
+//               zipCode,
+//               walletAddress,
+//             });
+
+//             await customer.save();
+
+//             const newCustomer = {
+//               firstName: customer.firstName,
+//               lastName: customer.lastName,
+//               role: customer.role,
+//               email: customer.email,
+//               signature: customer.signature,
+//               isActive: customer.isActive,
+//               isRemember: customer.isRemember,
+//               key: customer.key,
+//               dialingCode: customer.dialingCode,
+//               phone: customer.phone,
+//               addressLine: customer.addressLine,
+//               country: customer.country,
+//               state: customer.state,
+//               city: customer.city,
+//               zipCode: customer.zipCode,
+//               walletAddress: customer.walletAddress,
+//             };
+
+//             return ApiResponse.success(
+//               ResponseDefinitions.OperationSuccessful.message,
+//               {
+//                 createSuccessResponse: "Successfully registered.",
+//                 token: isRemember
+//                   ? jwt.sign(newCustomer, env.TOKEN_SECRET, { expiresIn: "48h" })
+//                   : "",
+//                 ...newCustomer,
+//                 expiresIn: "48h",
+//               },
+//               ResponseDefinitions.OperationSuccessful.code
+//             );
+
+//   } catch (error) {
+//       const responseError = ApiResponse.error(
+//           ResponseDefinitions.NotFound.message,
+//           ResponseDefinitions.NotFound.code
+//         );
+//         console.error("responseError", error);
+        
+//         return responseError 
+//   }
+  
+// }

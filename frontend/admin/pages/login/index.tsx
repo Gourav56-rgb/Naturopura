@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from "next/router";
 import { login } from '../../action/authActions';
+import Image from "next/image";
 
-const index = () => {
+const Index = () => {
 
   const dispatch = useDispatch();
   const [wallets, setWallets] = useState<Array<any>>([]);
@@ -43,7 +44,7 @@ const index = () => {
     if (user) {
       router.push("/");
     }
-  }, [user]);
+  }, [user, router]);
 
 
   useEffect(() => {
@@ -51,7 +52,7 @@ const index = () => {
       router.push("/signup");
     }
     console.log(`user`, user);
-  }, [error]);
+  }, [error, user, router]);
 
   return (
     <div className="">
@@ -111,4 +112,4 @@ const index = () => {
   );
 };
 
-export default index;
+export default Index;

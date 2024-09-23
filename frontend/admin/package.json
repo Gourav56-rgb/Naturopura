@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@heroicons/react": "^2.1.5",
     "@meshsdk/core": "^1.5.2",
     "@meshsdk/react": "^1.1.7",
     "@reduxjs/toolkit": "^1.9.5",

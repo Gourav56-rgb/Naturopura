@@ -1,7 +1,7 @@
 import { AnyAction, Dispatch } from 'redux';
-import { loginUser } from '../api/loginApi';
+import { loginAdmin } from '../api/loginApi';
 import { ThunkDispatch } from 'redux-thunk';
-import { signUpUser } from '../api/signUp';
+import { signUpAdmin } from '../api/signUp';
 
 // Action Types
 export const LOGIN_REQUEST = 'auth/setLoading';
@@ -45,7 +45,7 @@ export const login = (credentials: { signature: string; key: string }) => {
     console.log(`>>>>>>>>>>.3`);
 
     try {
-      const response = await loginUser(credentials);
+      const response = await loginAdmin(credentials);
       console.log(`response>>>>>>>>>`, response);
 
       if (typeof window !== "undefined") {
@@ -68,31 +68,30 @@ export const login = (credentials: { signature: string; key: string }) => {
   };
 };
 
-
-
-
 export const signUp = (credentials: {
+  // id: Number
   firstName: string;
   lastName: string;
   email: string;
   isRemember: Boolean;
+  isActive: Boolean,
   signature: string;
   dialingCode: string;
-  address: string;
-  addressLine1: string;
-  phone: Number;
+  addressLine: string;
+  phone: string;
   country: string;
+  walletAddress: string;
   state: string;
   city: string;
   zipCode: string;
   key: string;
-  type: string;
+  role: string;
 }) => {
   return async (dispatch: Dispatch) => {
     dispatch(setLoading(true));
 
     try {
-      const response = await signUpUser(credentials);
+      const response = await signUpAdmin(credentials);
 
       if (typeof window !== "undefined") {
         localStorage.setItem("accessToken", response?.token);

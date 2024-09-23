@@ -1,9 +1,10 @@
 import axios from "axios";
 
-export const loginUser = async (credentials: {
+export const loginAdmin = async (credentials: {
   signature: string;
   key: string;
 }) => {
+  console.log(credentials, "credentials");
   try {
     const response = await axios.post(
       "http://localhost:4000/auth/admin/login",
