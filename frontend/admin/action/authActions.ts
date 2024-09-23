@@ -1,14 +1,13 @@
-import { AnyAction, Dispatch } from 'redux';
-import { loginAdmin } from '../api/loginApi';
-import { ThunkDispatch } from 'redux-thunk';
-import { signUpAdmin } from '../api/signUp';
+import { AnyAction, Dispatch } from "redux";
+import { loginAdmin } from "../api/loginApi";
+import { ThunkDispatch } from "redux-thunk";
+import { signUpAdmin } from "../api/signUp";
 
 // Action Types
-export const LOGIN_REQUEST = 'auth/setLoading';
-export const LOGIN_SUCCESS = 'auth/setUser';
-export const LOGIN_FAILURE = 'auth/setError';
-export const LOGOUT = 'auth/logout';
-
+export const LOGIN_REQUEST = "auth/setLoading";
+export const LOGIN_SUCCESS = "auth/setUser";
+export const LOGIN_FAILURE = "auth/setError";
+export const LOGOUT = "auth/logout";
 
 type User = {
   id: number;
@@ -42,20 +41,20 @@ export const logout = () => ({
 export const login = (credentials: { signature: string; key: string }) => {
   return async (dispatch: Dispatch) => {
     dispatch(setLoading(true));
-    console.log(`>>>>>>>>>>.3`);
+    // console.log(`>>>>>>>>>>.3`);
 
     try {
       const response = await loginAdmin(credentials);
-      console.log(`response>>>>>>>>>`, response);
+      // console.log(`response>>>>>>>>>`, response);
 
       if (typeof window !== "undefined") {
-        localStorage.setItem("accessToken", response?.token);
+        localStorage.setItem("accessToken", response?.data.data.token);
       }
       if (!response.success) {
         dispatch(loginFailure(response));
       } else {
         const user = response.data;
-        user.token = response?.token;
+        user.token = response?.data.data.token;
         // Assuming the server returns the user object
         dispatch(loginSuccess(user));
       }
@@ -74,7 +73,7 @@ export const signUp = (credentials: {
   lastName: string;
   email: string;
   isRemember: Boolean;
-  isActive: Boolean,
+  isActive: Boolean;
   signature: string;
   dialingCode: string;
   addressLine: string;
@@ -106,5 +105,3 @@ export const signUp = (credentials: {
     }
   };
 };
-
-

@@ -6,7 +6,7 @@ const saltRounds = 10;
 import User from "../model/user.model";
 import env from "../environment/environment";
 // import { createErrorResponse,createSuccessResponse } from "../utility/helper/helper";
-import { publishUserRegisteredEvent } from "../event/event";
+// import { publishUserRegisteredEvent } from "../event/event";
 import jwt from "jsonwebtoken";
 import ApiResponse from "../../helper/ApiResponse";
 import { ResponseDefinitions } from "../responses";
@@ -73,13 +73,13 @@ export const userSignup = async (
           // Return success response
           return ApiResponse.success("Successfully registered.", {
             createSuccessResponse: "Successfully registered.",
-            token: isRemember
-              ? jwt.sign(
-                  newCustomer,
-                  process.env.TOKEN_SECRET || env.TOKEN_SECRET,
-                  { expiresIn: "48h" }
-                )
-              : "",
+            // token: isRemember
+            //   ? jwt.sign(
+            //       newCustomer,
+            //       process.env.TOKEN_SECRET || env.TOKEN_SECRET,
+            //       { expiresIn: "48h" }
+            //     )
+            //   : "",
             ...newCustomer,
             expiresIn: "48h",
           });
@@ -192,7 +192,7 @@ export const adminLogin = async (signature: any, key: any) => {
           console.log("newCustomer", newCustomer);
           
 
-          const successResponse =  ApiResponse.success(
+          const successResponse = ApiResponse.success(
             ResponseDefinitions.OperationSuccessful.message,
             {
               createSuccessResponse: "Successfully logged in.",
@@ -272,7 +272,7 @@ export const adminSignup = async (
     return await bcryptjs
       .genSalt(saltRounds)
       .then(async (salt: string) => {
-        console.log("Generated Salt:", salt);
+        // console.log("Generated Salt:", salt);
         // console.log(bcryptjs.hash(signature, salt), "Hashed");
 
         const hashedToken = await bcryptjs.hash(signature, salt);
@@ -287,6 +287,7 @@ export const adminSignup = async (
           role,
           email,
           signature: hashedToken,
+          // signature,
           isActive,
           isRemember,
           key,
@@ -343,7 +344,7 @@ export const adminSignup = async (
           {
             createSuccessResponse: "Successfully registered.",
             token: isRemember
-              ? jwt.sign(newCustomer, env.TOKEN_SECRET, { expiresIn: "48h" })
+               ? jwt.sign(newCustomer, env.TOKEN_SECRET, { expiresIn: "48h" })
               : "",
             ...newCustomer,
             expiresIn: "48h",
@@ -362,15 +363,11 @@ export const adminSignup = async (
       });
 
   } catch (error) {
-    const responseError = ApiResponse.error(
+    return ApiResponse.error(
       ResponseDefinitions.NotFound.message,
       ResponseDefinitions.NotFound.code
     );
-    // console.log("responseError", responseError);
-    
-    console.error("responseError", error);
-    
-    return responseError
+    // console.log("responseError", responseError); 
   }
 };
 

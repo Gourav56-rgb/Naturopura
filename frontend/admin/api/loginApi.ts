@@ -10,6 +10,9 @@ export const loginAdmin = async (credentials: {
       "http://localhost:4000/auth/admin/login",
       credentials
     );
+    localStorage.setItem("accessToken", response.data.data.token);
+    // console.log("response", response.data.data.token);
+
     return response.data;
   } catch (error: any) {
     throw error;

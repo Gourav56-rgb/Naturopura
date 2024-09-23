@@ -10,6 +10,9 @@ import {
 import Joi from "joi";
 import ApiResponse from "../../helper/ApiResponse";
 import { ResponseDefinitions } from "../responses";
+// import jwt from "jsonwebtoken";
+// import cookieParser from "cookie-parser";
+// import env from "../environment/environment";
 
 const router: Router = Router();
 
@@ -193,6 +196,16 @@ router.post("/admin/signup", async (req: Request, res: Response) => {
       zipCode
       // id
     );
+
+    // const token = isRemember ? jwt.sign(response, env.TOKEN_SECRET, {
+    //   expiresIn: "48h",
+    // }) : "";
+
+    // res.cookie("token", token, {
+    //   httpOnly: true, // Prevents client-side JS from accessing the cookie
+    //   secure: true, // Only use HTTPS in production
+    //   maxAge: 48 * 60 * 60 * 1000, // 48 hours
+    // });
     
     // console.log(response, ">>>>>>>>>>>>>");
     // console.log(key, "090909090909");

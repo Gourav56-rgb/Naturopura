@@ -21,6 +21,10 @@ export const signUpAdmin = async (credentials: {
 }) => {
   console.log(credentials, "5555555555555555555555555");
   try {
+    // const api = axios.create({
+    //   baseURL: 'http://localhost:4000', // Adjust to your backend URL
+    //   withCredentials: true, // Important to send cookies with requests
+    // });
     const response = await axios.post(
       "http://localhost:4000/auth/admin/signup",
       credentials

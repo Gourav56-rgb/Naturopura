@@ -11,9 +11,12 @@ import apiRouter from "./routes/api";
 import bodyParser  from 'body-parser';
 import mongoose from "mongoose"
 import cors from "cors"
+import cookieParser from "cookie-parser"
 
 require("dotenv").config();
 const app = express();
+
+// app.use(cookieParser())
 
 // Configure CORS headers
 app.use((req, res, next) => {

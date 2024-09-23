@@ -1,13 +1,13 @@
 import React from "react";
 import { BrowserWallet } from "@meshsdk/core";
 import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/router";
-import { login } from '../../action/authActions';
+import { login } from "../../action/authActions";
 import Image from "next/image";
 
-const Index = () => {
-
+// import { config } from "./wagmiconfig";
+const AdminLogin = () => {
   const dispatch = useDispatch();
   const [wallets, setWallets] = useState<Array<any>>([]);
   const [openWallet, setOpenWallet] = useState(false);
@@ -15,7 +15,12 @@ const Index = () => {
   async function connectToWallet(walletName: string) {
     const wallet = await BrowserWallet.enable(walletName);
     const addresses = await wallet.getUsedAddresses();
-    const signature = await wallet.signData(addresses[0], 'mesh');
+    // console.log(addresses, "your addresses");
+
+    const signature = await wallet.signData(
+      addresses[0],
+      "you are logging in to naturopura"
+    );
 
     dispatch(login({ key: signature.key, signature: signature.signature }));
   }
@@ -24,8 +29,7 @@ const Index = () => {
   const user = useSelector((state: any) => state.auth.user);
   const error = useSelector((state: any) => state.auth.error);
 
-  console.log(`error>>>>>>>>>>>>>>opc`, error?.responseType);
-
+  // console.log(`error>>>>>>>>>>>>>>opc`, error?.responseType);
 
   if (typeof window !== "undefined") {
     const wallet_find = BrowserWallet.getInstalledWallets();
@@ -37,21 +41,16 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-
-  }, []);
-
-  useEffect(() => {
     if (user) {
       router.push("/");
     }
   }, [user, router]);
 
-
   useEffect(() => {
-    if (error !== null && error?.responseType == 'USER_NOT_EXIST') {
+    if (error !== null && error?.responseType == "USER_NOT_EXIST") {
       router.push("/signup");
     }
-    console.log(`user`, user);
+    // console.log(`user`, user);
   }, [error, user, router]);
 
   return (
@@ -84,6 +83,7 @@ const Index = () => {
             />
           </svg>
         </button>
+
         {/* <select
           id="mySelect"
           className="w-[10rem]"
@@ -112,4 +112,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default AdminLogin;

@@ -2,6 +2,8 @@ import Head from "next/head";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/router";
+import AdminSignup from "./signup";
+import AdminLogin from "./login";
 
 export default function Home() {
   const router = useRouter();
@@ -11,17 +13,25 @@ export default function Home() {
 
   const dispatch = useDispatch();
 
-  useEffect(() => {}, [dispatch]);
+  useEffect(() => {
+     if (user) {
+      router.push("/")
+     }
+  }, [user, router]);
 
   useEffect(() => {
     if (!user) {
-      router.push("/login");
+      router.push("/signup");
     }
   }, [user, router]);
 
   return (
     <>
-     <h1 className="bg-red">Admin</h1>
+     <h1 className="bg-red">
+      {/* <AdminSignup /> */}
+      {/* <AdminLogin /> */}
+      Admin
+     </h1>
     </>
   );
 }

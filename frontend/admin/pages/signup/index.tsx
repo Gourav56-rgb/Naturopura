@@ -6,7 +6,7 @@ import { signUp } from "../../action/authActions";
 import { useRouter } from "next/router";
 // import { ChevronDownIcon } from "@heroicons/react/20/solid";
 
-const Index = () => {
+const AdminSignup = () => {
   const [wallets, setWallets] = useState<Array<any>>([]);
   const [formData, setFormData] = useState({
     firstName: "",
@@ -34,7 +34,7 @@ const Index = () => {
     "insurance",
     "cold-storage",
   ]);
-  console.log("formdata", formData);
+  // console.log("formdata", formData);
   const user = useSelector((state: any) => state.auth.user);
   const error = useSelector((state: any) => state.auth.error);
   const dispatch = useDispatch();
@@ -43,8 +43,8 @@ const Index = () => {
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = event.target;
-    console.log("name", name);
-    console.log("value", value);
+    // console.log("name", name);
+    // console.log("value", value);
     setFormData((prevFormData) => ({
       ...prevFormData,
       [name]: value,
@@ -59,6 +59,8 @@ const Index = () => {
     const addresses = await wallet.getUsedAddresses();
 
     const signature = await wallet.signData(addresses[0], "mesh");
+    // console.log("signature", signature);
+    // console.log("signature.signature", signature.signature);
 
     dispatch(
       signUp({
@@ -80,15 +82,15 @@ const Index = () => {
         role: formData.role,
       })
     );
-    console.log(addresses, ">>>>>>>>");
-    console.log(typeof signature.key);
+    // console.log(addresses, ">>>>>>>>");
+    // console.log(typeof signature.key);
 
-    console.log(typeof signature, "99999999999999");
+    // console.log(typeof signature, "99999999999999");
   };
 
   useEffect(() => {
     const getBrowser = BrowserWallet.getInstalledWallets();
-    console.log(getBrowser, "getBrowser");
+    // console.log(getBrowser, "getBrowser");
     setWallets(getBrowser);
   }, []);
 
@@ -96,7 +98,7 @@ const Index = () => {
     if (user) {
       router.push("/");
     }
-    console.log(`error`, error);
+    // console.log(`error`, error);
   }, [error, user, router]);
 
   return (
@@ -370,4 +372,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default AdminSignup;
