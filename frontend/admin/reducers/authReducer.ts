@@ -1,55 +1,68 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { adminReducerInitialState } from "../types/reducer-types";
+import { Admin, Error } from "../types/types";
 
-type User = {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-  token: string;
-};
-
-interface ErrorType {
-  code: string;
-  details: any;
-  message: string;
-}
-
-interface AuthState {
-  user: User | null;
-  loading: boolean;
-  error: ErrorType | null;
-}
-
-const initialState: AuthState = {
-  user: null,
+const initialState: adminReducerInitialState = {
+  admin: null,
   loading: false,
   error: null,
 };
+// type User = {
+//   id: number;
+//   firstName: string;
+//   lastName: string;
+//   email: string;
+//   role: string;
+//   token: string;
+// };
 
-const authSlice = createSlice({
-  name: "auth",
+// interface ErrorType {
+//   code: string;
+//   details: any;
+//   message: string;
+// }
+
+// interface AuthState {
+//   user: User | null;
+//   loading: boolean;
+//   error: ErrorType | null;
+// }
+
+// const initialState: AuthState = {
+//   user: null,
+//   loading: false,
+//   error: null,
+// };
+
+export const adminReducer = createSlice({
+  name: "adminReducer",
   initialState,
   reducers: {
-    setUser: (state, action: PayloadAction<User>) => {
-      state.user = action.payload;
+    adminExist: (state, action: PayloadAction<Admin>) => {
       state.loading = false;
+      state.admin = action.payload;
       state.error = null;
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
-    setError: (state, action: PayloadAction<ErrorType>) => {
-      state.error = action.payload;
+    adminNotExist: (state, action: PayloadAction<Error>) => {
       state.loading = false;
+      state.error = action.payload;
+      // state.admin = null;
     },
-    logout: (state) => {
-      state.user = null;
+    // setError: (state, action: PayloadAction<ErrorType>) => {
+    //   state.error = action.payload;
+    //   state.loading = false;
+    // },
+    adminLogout: (state) => {
+      state.admin = null;
       state.loading = false;
       state.error = null;
     },
   },
 });
 
-export const { setUser, setLoading, setError, logout } = authSlice.actions;
-export default authSlice.reducer;
+export const { adminExist, adminNotExist, adminLogout, setLoading } =
+  adminReducer.actions;
+export default adminReducer.reducer;

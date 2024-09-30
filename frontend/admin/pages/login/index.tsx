@@ -1,112 +1,69 @@
-import React from "react";
-import { BrowserWallet } from "@meshsdk/core";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/router";
-import { login } from "../../action/authActions";
-import Image from "next/image";
+import Login from "../../action/loginAuthAction";
+import { adminReducerInitialState } from "../../types/reducer-types";
+import Link from "next/link";
+import toast from "react-hot-toast";
 
-// import { config } from "./wagmiconfig";
+// Helper function to convert string to hex
+const stringToHex = (str: string) => {
+  return Buffer.from(str, "utf8").toString("hex");
+};
+
 const AdminLogin = () => {
   const dispatch = useDispatch();
-  const [wallets, setWallets] = useState<Array<any>>([]);
-  const [openWallet, setOpenWallet] = useState(false);
-
-  async function connectToWallet(walletName: string) {
-    const wallet = await BrowserWallet.enable(walletName);
-    const addresses = await wallet.getUsedAddresses();
-    // console.log(addresses, "your addresses");
-
-    const signature = await wallet.signData(
-      addresses[0],
-      "you are logging in to naturopura"
-    );
-
-    dispatch(login({ key: signature.key, signature: signature.signature }));
-  }
-
-  const router = useRouter();
-  const user = useSelector((state: any) => state.auth.user);
-  const error = useSelector((state: any) => state.auth.error);
-
-  // console.log(`error>>>>>>>>>>>>>>opc`, error?.responseType);
-
-  if (typeof window !== "undefined") {
-    const wallet_find = BrowserWallet.getInstalledWallets();
-  }
+  const [isNamiInstalled, setIsNamiInstalled] = useState(false);
 
   useEffect(() => {
-    const getBrowser = BrowserWallet.getInstalledWallets();
-    setWallets(getBrowser);
+    if (typeof window !== "undefined" && window.cardano?.nami) {
+      setIsNamiInstalled(true);
+    }
   }, []);
 
-  useEffect(() => {
-    if (user) {
-      router.push("/");
-    }
-  }, [user, router]);
+  async function connectToNamiWallet() {
+    try {
+      const nami = await window.cardano.nami.enable();
+      const addresses = await nami.getUsedAddresses();
+      const message = "you are logging in to naturopura";
+      const hexMessage = stringToHex(message); // Convert the message to hex
 
-  useEffect(() => {
-    if (error !== null && error?.responseType == "USER_NOT_EXIST") {
-      router.push("/signup");
+      const signature = await nami.signData(addresses[0], hexMessage);
+      console.log("Wallet connected and data signed:", signature);
+      console.log("error before ");
+      dispatch(Login({ key: signature.key, signature: signature.signature }));
+      console.log("error after ");
+    } catch (error) {
+      console.log("Error connecting to Nami wallet:", error);
+      toast.error("Error connecting to Nami wallet!");
     }
-    // console.log(`user`, user);
-  }, [error, user, router]);
+  }
 
   return (
     <div className="">
       <main className="main flex items-center flex-col">
         <img src="/images/Group-230.png" alt="" className="m-4" />
-        {/* <button onClick={() => connectToWallet()}>Test</button> */}
         <label htmlFor="mySelect" className="text-red-700">
-          Sign-up with wallet
+          Sign-up with Nami Wallet
         </label>
-        <button
-          onClick={() => setOpenWallet(!openWallet)}
-          type="button"
-          className="text-white bg-[#ACB631] hover:bg-[#ACB631]/90 focus:ring-4 focus:outline-none focus:ring-[#f3ff63]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-[#3b5998]/55 mt-4"
-        >
-          Login in with Wallet
-          <svg
-            fill="none"
-            height="24"
-            stroke-width="1.5"
-            viewBox="0 0 24 24"
-            width="24"
-            xmlns="http://www.w3.org/2000/svg"
+        {isNamiInstalled ? (
+          <button
+            onClick={connectToNamiWallet}
+            type="button"
+            className="text-white bg-[#ACB631] hover:bg-[#ACB631]/90 focus:ring-4 focus:outline-none focus:ring-[#f3ff63]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-[#3b5998]/55 mt-4"
           >
-            <path
-              d="M6 9L12 15L18 9"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </button>
+            Login with Nami Wallet
+          </button>
+        ) : (
+          <p className="text-red-500">Nami Wallet is not installed.</p>
+        )}
 
-        {/* <select
-          id="mySelect"
-          className="w-[10rem]"
-          onChange={(event) => {
-            // console.log(event.target.value, ">>>>>>");
-            connectToWallet(event.target.value)
-          }}
-          
-        > */}
-        {/* <option>Select a wallet</option> */}
-        {openWallet &&
-          wallets.map((item, index) => {
-            return (
-              <div
-                key={index}
-                onClick={() => connectToWallet(item.name)}
-                className="text-white bg-[#ACB631] hover:bg-[#ACB631]/90 focus:ring-4 focus:outline-none focus:ring-[#f3ff63]/50 font-medium rounded-sm text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-[#3b5998]/55 mt-1 w-[10rem] cursor-pointer"
-              >
-                {item.name}
-              </div>
-            );
-          })}
-        {/* </select> */}
+        <button
+          type="button"
+          className="text-white bg-[#ACB631] focus:ring-4 focus:outline-none focus:ring-[#f3ff63]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-[#3b5998]/55 mt-4"
+        >
+          <Link href={"/signup"}>Signup</Link>
+        </button>
       </main>
     </div>
   );

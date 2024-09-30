@@ -2,9 +2,9 @@ import React from "react";
 import { useEffect, useState } from "react";
 import { BrowserWallet } from "@meshsdk/core";
 import { useDispatch, useSelector } from "react-redux";
-import { signUp } from "../../action/authActions";
+import SignUp from "../../action/signupAuthAction";
 import { useRouter } from "next/router";
-// import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import { adminReducerInitialState } from "../../types/reducer-types";
 
 const AdminSignup = () => {
   const [wallets, setWallets] = useState<Array<any>>([]);
@@ -34,17 +34,16 @@ const AdminSignup = () => {
     "insurance",
     "cold-storage",
   ]);
-  // console.log("formdata", formData);
-  const user = useSelector((state: any) => state.auth.user);
-  const error = useSelector((state: any) => state.auth.error);
+
+  const { admin, error } = useSelector(
+    (state: { adminReducer: adminReducerInitialState }) => state.adminReducer
+  );
   const dispatch = useDispatch();
   const router = useRouter();
   const handleChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = event.target;
-    // console.log("name", name);
-    // console.log("value", value);
     setFormData((prevFormData) => ({
       ...prevFormData,
       [name]: value,
@@ -53,17 +52,11 @@ const AdminSignup = () => {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    // Perform form submission logic here
     const wallet = await BrowserWallet.enable(formData.walletName);
     const addresses = await wallet.getUsedAddresses();
-
     const signature = await wallet.signData(addresses[0], "mesh");
-    // console.log("signature", signature);
-    // console.log("signature.signature", signature.signature);
-
     dispatch(
-      signUp({
+      SignUp({
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
@@ -82,24 +75,12 @@ const AdminSignup = () => {
         role: formData.role,
       })
     );
-    // console.log(addresses, ">>>>>>>>");
-    // console.log(typeof signature.key);
-
-    // console.log(typeof signature, "99999999999999");
   };
 
   useEffect(() => {
     const getBrowser = BrowserWallet.getInstalledWallets();
-    // console.log(getBrowser, "getBrowser");
     setWallets(getBrowser);
   }, []);
-
-  useEffect(() => {
-    if (user) {
-      router.push("/");
-    }
-    // console.log(`error`, error);
-  }, [error, user, router]);
 
   return (
     <div className="isolate bg-white px-6 py-24 sm:py-32 lg:px-8">
